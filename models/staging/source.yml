@@ -1,0 +1,94 @@
+version: 2
+
+sources:
+  - name: PUBLIC # dbtプロジェクト内で参照するSource名
+    database: DB_SAIGUSA # 実際のデータベース名
+    schema: PUBLIC # 実際のスキーマ名
+
+    tables:
+      # =========================================================================
+      # 1. USER_TEST テーブル
+      # =========================================================================
+      - name: USER_TEST
+        description: ユーザーマスタテーブル
+        columns:
+          # ID (主キー): NOT NULL & UNIQUE のテストを実施
+          - name: ID
+            description: ユーザーID (主キー)
+            tests:
+              - not_null
+              - unique
+          
+          # NAME, AGE, GENDER: NULLを許容するため、明示的なNOT NULLテストは不要
+          - name: NAME
+          - name: AGE
+          - name: GENDER
+              
+      # =========================================================================
+      # 2. BOOK_MASTER テーブル
+      # =========================================================================
+      - name: BOOK_MASTER
+        description: 書籍マスタテーブル
+        columns:
+          # BOOK_ID (主キー): NOT NULL & UNIQUE のテストを実施
+          - name: BOOK_ID
+            description: 書籍ID (主キー)
+            tests:
+              - not_null
+              - unique
+              
+          # TITLE (NOT NULL): NOT NULL のテストを実施
+          - name: TITLE
+            description: 書籍タイトル
+            tests:
+              - not_null
+              
+          # ISBN (UNIQUE): UNIQUE のテストを実施
+          - name: ISBN
+            description: ISBNコード (一意制約あり)
+            tests:
+              - unique
+              
+          # AUTHOR: NULLを許容するため、明示的なNOT NULLテストは不要
+          - name: AUTHOR
+      
+      # =========================================================================
+      # 3. BOOK_RENTAL テーブル
+      # =========================================================================
+      - name: BOOK_RENTAL
+        description: 書籍レンタル取引テーブル
+        columns:
+          # RENTAL_ID (主キー): NOT NULL & UNIQUE のテストを実施
+          - name: RENTAL_ID
+            description: レンタルID (主キー)
+            tests:
+              - not_null
+              - unique
+              
+          # USER_ID (外部キー, NOT NULL制約なし): 参照整合性のテストを実施
+          # USER_TEST.IDへの参照が常に有効であることをチェック
+          - name: USER_ID
+            description: ユーザーID (USER_TESTを参照)
+            tests:
+              # dbt-utils パッケージの relationships テストを使用することを想定
+              - relationships:
+                  to: source('PUBLIC', 'USER_TEST')
+                  field: ID
+              
+          # BOOK_ID (外部キー, NOT NULL制約なし): 参照整合性のテストを実施
+          # BOOK_MASTER.BOOK_IDへの参照が常に有効であることをチェック
+          - name: BOOK_ID
+            description: 書籍ID (BOOK_MASTERを参照)
+            tests:
+              # dbt-utils パッケージの relationships テストを使用することを想定
+              - relationships:
+                  to: source('PUBLIC', 'BOOK_MASTER')
+                  field: BOOK_ID
+                  
+          # RENTAL_DATE, DUE_DATE: NOT NULL制約はないため、NOT NULLテストは不要
+          # SnowflakeのCREATE TABLE定義から、明示的なNOT NULL制約はありません。
+          - name: RENTAL_DATE
+          - name: DUE_DATE
+          
+          # RETURN_DATE: NULLを許容する
+          - name: RETURN_DATE
